@@ -12,7 +12,7 @@ Hello, and thanks for stopping by! I'm Yannick—a driven aerospace engineer wit
 ### 2. [Inverted Pendulum: Two-Wheeled Balancing Robot 🤖](./Inverted_Pendulum)
 **Description**: This project focused on stabilizing an inherently unstable two-wheeled robot using a state-space model and Linear Quadratic Regulator (LQR). By modeling the system as an inverted pendulum, I implemented a controller that maintains balance using feedback loops and real-time state estimation through Kalman filtering.
 
-### 3. [Engineering Laboratory Reports & Papers 📄](./Papers)
+### 3. [Engineering Papers 📄](./Papers)
 A collection of engineering experiments and analyses, each showcasing a blend of theoretical, experimental, and practical approaches. Topics include:
 - **Particle Image Velocimetry (PIV)**: Visualizing and quantifying fluid flow fields.
 - **Unsteady Drag Corrections**: Investigating drag forces on falling bluff bodies.
