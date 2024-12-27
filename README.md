@@ -31,7 +31,7 @@ I'm a practical engineer who enjoys blending core engineering principles with in
 
 **Connect**:
 - [LinkedIn](https://www.linkedin.com/in/yannab) 🌐
-- Email: yannicknbond@gmail.com 📧
+- Email: bondoyannick9@gmail.com 📧
 
 ---
 
