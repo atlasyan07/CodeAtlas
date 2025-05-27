@@ -6,7 +6,7 @@ Hello, and thanks for stopping by! I'm Yannick—a driven aerospace engineer wit
 
 ## 📂 Projects Overview
 
-### 1. [Spacecraft Battery Voltage Prediction Model 🔋](./Battery_Voltage_Prediction)  
+### 1. [Spacecraft Battery Voltage Prediction Model 🔋](./Battery_Voltage_Prediction/spacecraft_battery_prediction_research.md)  
 **Description**: This project showcases the foundational ML research behind a production-grade spacecraft battery monitoring system. I developed a pure ML model using a hybrid CNN-LSTM architecture to predict spacecraft battery voltage directly from telemetry. A novel "fractional orbit" feature—derived from eclipse transitions—enabled the model to infer orbital phase and learn charge/discharge patterns without explicit physics.
 
 **Highlights**:
@@ -29,7 +29,7 @@ A collection of engineering experiments and analyses, each showcasing a blend of
 ### 4. [Sudoku Solver 🧩](./Sudoku_Solver)  
 A fun yet educational project where I built a Sudoku solver using a backtracking algorithm, complete with graphical visualization through `pygame`. This project demonstrates algorithmic problem-solving and provides a real-time view of how the solver fills each cell.
 
-### 5. [Spacecraft Attitude Visualization Tool 🌌](./OrbitVizProjectRoot)  
+### 5. [Spacecraft Attitude Visualization Tool 🌌](./OrbitVizProjectRoot/spacecraft_viz_readme.md)  
 **Description**: A real-time 3D visualization tool built with Qt and VTK to simulate spacecraft attitude dynamics. This tool allows for interactive rendering of spacecraft orientation, reference vectors (Sun, Nadir, Velocity), and live quaternion-based updates in an intuitive GUI. Designed for mission operations and control engineers, it includes a physics-backed simulation engine, Dockerized deployment, and supports telemetry playback for post-flight analysis.
 
 ---
