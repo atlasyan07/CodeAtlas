@@ -1,0 +1,22 @@
+# Material file for cubesat.obj
+
+# Main body material
+newmtl Body
+Ka 0.2 0.2 0.2
+Kd 0.7 0.7 0.7
+Ks 0.5 0.5 0.5
+Ns 50.0
+
+# Solar panel material
+newmtl SolarPanel
+Ka 0.0 0.0 0.2
+Kd 0.0 0.0 0.8
+Ks 0.3 0.3 0.9
+Ns 80.0
+
+# Antenna material
+newmtl Antenna
+Ka 0.2 0.2 0.2
+Kd 0.2 0.2 0.2
+Ks 0.7 0.7 0.7
+Ns 100.0

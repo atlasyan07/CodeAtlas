@@ -1,0 +1,108 @@
+# Wavefront OBJ file for a simple cubesat
+# Created for Spacecraft Attitude Visualization Tool
+
+mtllib cubesat.mtl
+
+# Main cubesat body (10x10x10 cm)
+v -0.5 -0.5 -0.5
+v 0.5 -0.5 -0.5
+v 0.5 0.5 -0.5
+v -0.5 0.5 -0.5
+v -0.5 -0.5 0.5
+v 0.5 -0.5 0.5
+v 0.5 0.5 0.5
+v -0.5 0.5 0.5
+
+# Solar panel +Y (20x10 cm)
+v -0.5 0.5 -0.5
+v 0.5 0.5 -0.5
+v 0.5 0.5 0.5
+v -0.5 0.5 0.5
+v -0.5 2.0 -0.5
+v 0.5 2.0 -0.5
+v 0.5 2.0 0.5
+v -0.5 2.0 0.5
+
+# Solar panel -Y (20x10 cm)
+v -0.5 -0.5 -0.5
+v 0.5 -0.5 -0.5
+v 0.5 -0.5 0.5
+v -0.5 -0.5 0.5
+v -0.5 -2.0 -0.5
+v 0.5 -2.0 -0.5
+v 0.5 -2.0 0.5
+v -0.5 -2.0 0.5
+
+# Antenna +Z (10 cm long)
+v -0.1 -0.1 0.5
+v 0.1 -0.1 0.5
+v 0.1 0.1 0.5
+v -0.1 0.1 0.5
+v -0.1 -0.1 1.5
+v 0.1 -0.1 1.5
+v 0.1 0.1 1.5
+v -0.1 0.1 1.5
+
+# Group for main body
+g Body
+usemtl Body
+# Bottom face
+f 1 2 3 4
+# Top face
+f 5 8 7 6
+# Front face
+f 1 5 6 2
+# Back face
+f 4 3 7 8
+# Left face
+f 1 4 8 5
+# Right face
+f 2 6 7 3
+
+# Group for +Y solar panel
+g SolarPanelPlusY
+usemtl SolarPanel
+# Front face
+f 9 13 14 10
+# Back face
+f 12 11 15 16
+# Top face
+f 13 16 15 14
+# Bottom face
+f 9 10 11 12
+# Left face
+f 9 12 16 13
+# Right face
+f 10 14 15 11
+
+# Group for -Y solar panel
+g SolarPanelMinusY
+usemtl SolarPanel
+# Front face
+f 17 21 22 18
+# Back face
+f 20 19 23 24
+# Top face
+f 21 24 23 22
+# Bottom face
+f 17 18 19 20
+# Left face
+f 17 20 24 21
+# Right face
+f 18 22 23 19
+
+# Group for antenna
+g Antenna
+usemtl Antenna
+# Bottom face
+f 25 26 27 28
+# Top face
+f 29 32 31 30
+# Front face
+f 25 29 30 26
+# Back face
+f 28 27 31 32
+# Left face
+f 25 28 32 29
+# Right face
+f 26 30 31 27

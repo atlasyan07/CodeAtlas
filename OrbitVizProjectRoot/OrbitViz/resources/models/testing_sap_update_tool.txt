@@ -1,0 +1,3 @@
+adcs.mcorr_imu1.t_gyro = [1.00900572, 0.00120569, 0.00015449, 0.00114941, 1.00267696, 0.00014567, -0.00242072, 0.00079017, 1.00254710]
+eps.pcdu.fss_latch_i_threshold = 0.21
+adcs.suntrack.clocking = "SC2NadirCentric"

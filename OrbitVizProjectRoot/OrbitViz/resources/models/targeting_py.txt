@@ -1,0 +1,268 @@
+from datetime import timedelta
+import matplotlib.pyplot as plt
+from matplotlib import dates, ticker
+import numpy as np
+import pandas as pd
+from scipy.stats import sigmaclip
+from shapely.geometry import Point, Polygon
+
+from image_processing.sensor import camera_model
+from image_processing.misc.quaternion import Quaternion
+from image_processing_providers.elevation_data import MeanElevationData
+from image_processing.misc.coordinates import GeodeticCoordinateArray
+from orbit_math import matrix_math, quaternion_math, vector_math
+
+NOMINAL_KNOWLEDGE_ERROR_KM = 0.3
+
+
+nominal_camera_parameters = {
+    "camera_bus_to_nominal_quaternion_w": 0.707107,
+    "camera_bus_to_nominal_quaternion_x": 0.0,
+    "camera_bus_to_nominal_quaternion_y": 0.0,
+    "camera_bus_to_nominal_quaternion_z": 0.707107,
+    "camera_decenter_distortion_coeff_1": 0.0,
+    "camera_decenter_distortion_coeff_2": 0.0,
+    "camera_focal_length": -462540.0,
+    "camera_nominal_to_camera_quaternion_w": 1.0,
+    "camera_nominal_to_camera_quaternion_x": 0.0,
+    "camera_nominal_to_camera_quaternion_y": 0.0,
+    "camera_nominal_to_camera_quaternion_z": 0.0,
+    "camera_pixel_pitch": 5.5e-06,
+    "camera_principal_point_x": 3300.0,
+    "camera_principal_point_y": 2200.0,
+    "camera_radial_distortion_coeff_0": 0.0,
+    "camera_radial_distortion_coeff_1": 0.0,
+    "camera_radial_distortion_coeff_2": 0.0,
+}
+
+
+def get_camera_model(image_capture, satellite_models, use_nominal=True):
+    if use_nominal:
+        sat_model = nominal_camera_parameters
+    else:
+        sat_model = satellite_models[str(image_capture.spacecraft_id)]
+    pos_eci_xyz = np.array([image_capture[f'spacecraft_position_{c}'] for c in 'xyz'])
+    vel_eci_xyz = np.array([image_capture[f'spacecraft_velocity_{c}'] for c in 'xyz'])
+    q_bdy = Quaternion.from_gemini_list([image_capture[f'spacecraft_attitude_{c}'] for c in 'abcd'])
+    q_ecef = Quaternion.from_gemini_list([image_capture[f'spacecraft_eci_to_ecef_{c}'] for c in 'abcd'])
+    R_eci2ecef = q_ecef.as_rotation_matrix()
+    pos_ecef_xyz = R_eci2ecef @ pos_eci_xyz
+    vel_ecef_xyz = R_eci2ecef @ vel_eci_xyz
+    q_ecef2bdy = q_bdy * q_ecef.inverse()
+    q_bdy2nom = Quaternion.from_gemini_list([sat_model[f'camera_nominal_to_camera_quaternion_{c}'] for c in 'xyzw'])
+    q_nom2cam = Quaternion.from_gemini_list([sat_model[f'camera_bus_to_nominal_quaternion_{c}'] for c in 'xyzw'])
+    camera_params = camera_model.CameraParameters(4400, 6600,
+                            [sat_model['camera_principal_point_x'],
+                             sat_model['camera_principal_point_y']],
+                            sat_model['camera_focal_length'],
+                            sat_model['camera_pixel_pitch'],
+                            [sat_model[f'camera_radial_distortion_coeff_{k}'] for k in range(3)],
+                            [sat_model[f'camera_decenter_distortion_coeff_{k}'] for k in range(1, 3)],
+                            pos_ecef_xyz, vel_ecef_xyz,
+                            q_ecef2bdy, q_bdy2nom, q_nom2cam)
+    # use the targeting elevation to define the plane
+    elevation = float(image_capture.mission_planner_elevation_meters)
+    if np.isnan(elevation):
+        elevation = float(image_capture.georeference_elevation_meters)
+        if np.isnan(elevation):
+            elevation = 0
+    if False: #image_capture.georeference_num_tiepoints_found > 5:
+        pk = 'georeference_corner_lat_lon'
+    else:
+        pk = 'pre_georeference_corner_lat_lon'
+    corners = ['upper_left', 'upper_right', 'lower_right', 'lower_left']
+    bounds_geo = GeodeticCoordinateArray([image_capture[f'{pk}_{c}_long'] for c in corners],
+                                          [image_capture[f'{pk}_{c}_lat'] for c in corners],
+                                          np.repeat(elevation, 4))
+    camera = camera_model.CameraModel(camera_params,
+                                      MeanElevationData(bounds_geo.lonlat,
+                                                        elevation,
+                                                        default_grid_spacing_degrees=0.1))
+    return camera
+
+
+def get_errors(image_capture, satellite_models):
+    # we are using the pregeo camera. If control error is too large, then the camera
+    # is poorly defined, so bail on trying to get errors.
+    # we could still get the knowledge error, but that would require the georef
+    # quaternion, which isn't saved in the report ...
+    if image_capture.estimated_vs_target_distance_km > 5:
+        return {'full_overlap': 0, 'cropped_overlap': 0}
+
+    try:
+        camera = get_camera_model(image_capture, satellite_models)
+    except:
+        print(f'failed to get camera model for image {image_capture.image_id}')
+        return {'full_overlap': 0, 'cropped_overlap': 0}
+
+    mean_gsd = pixel_to_km = image_capture.georeference_mean_gsd / 1e3
+    if pd.isna(pixel_to_km):
+        pixel_to_km = 1.2 / 1e3 # nominal GSD
+
+    # the estimated center is the origin, since we're using the pregeo camera model
+    estimated_xy = np.array([3300, 2200])
+
+    # project the target coordinates through the pregeo camera
+    target_geo = GeodeticCoordinateArray([image_capture.mission_planner_target_long],
+                                         [image_capture.mission_planner_target_lat],
+                                         [camera.elevation_data.elevation])
+    target_xy = camera.project_geodetic_to_image(target_geo)[0]
+
+    # control error is difference between estimated location and target location
+    # i.e., did spacecraft reach the target
+    control_error_xy = target_xy - estimated_xy
+    control_error = np.sqrt(np.sum(control_error_xy**2))
+    rv = {'control_error_x_km': control_error_xy[0] * pixel_to_km,
+          'control_error_y_km': control_error_xy[1] * pixel_to_km,
+          'control_error_km': control_error * pixel_to_km}
+
+    if not (image_capture.georeference_error_std_dev_meters < 50 and
+            image_capture.georeference_num_tiepoints_found >= 3 and
+            image_capture.georeferenced_vs_target_distance_km < 4):
+        return rv
+
+    # project the actual image center coordinates obtained from georeference through the pregeo camera
+    actual_geo = GeodeticCoordinateArray([image_capture.georef_center_lon],
+                                         [image_capture.georef_center_lat],
+                                         [camera.elevation_data.elevation])
+    actual_xy = camera.project_geodetic_to_image(actual_geo)[0]
+
+    # knowledge error is difference between actual center coordinates and estimated center coordinates
+    knowledge_error_xy = actual_xy - estimated_xy
+    knowledge_error = np.sqrt(np.sum(knowledge_error_xy**2))
+
+    # total error is difference between actual center coordinates and target coordinates
+    total_error_xy_km = (actual_xy - target_xy) * pixel_to_km
+    total_error_km = np.sqrt(np.sum(total_error_xy_km**2))
+
+    # calculate overlap between 3km diameter reticle centered at target coordinates and image footprint
+    sat_model = satellite_models[str(image_capture.spacecraft_id)]
+    reticle, full_image_bounds, cropped_image_bounds = get_reticle_and_bounds(total_error_xy_km, sat_model)
+    full_overlap, full_footprint = get_reticle_overlap(reticle, full_image_bounds, pixel_to_km)
+    cropped_overlap, cropped_footprint = get_reticle_overlap(reticle, cropped_image_bounds, pixel_to_km)
+
+    # calculate the "heading" as the angle between the velocity vector projected onto the image plane
+    # and the image y direction
+    # can fail if s/c wasn't pointed at earth which will fail trying to get a camera model
+    try:
+        heading = get_heading(image_capture, satellite_models)
+    except:
+        heading = 0
+
+    rv.update({'full_overlap': full_overlap,
+               'cropped_overlap': cropped_overlap,
+               'total_error_x_km': total_error_xy_km[0],
+               'total_error_y_km': total_error_xy_km[1],
+               'total_error_km': total_error_km,
+               'knowledge_error_x_km': knowledge_error_xy[0] * pixel_to_km,
+               'knowledge_error_y_km': knowledge_error_xy[1] * pixel_to_km,
+               'knowledge_error_km': knowledge_error * pixel_to_km,
+               'heading': heading})
+    
+    return rv
+
+
+def get_reticle_overlap(reticle, image_bounds, pixel_to_km, radius_km=1.5):
+    footprint = Polygon(np.array(image_bounds) *  pixel_to_km)
+    overlap = reticle.intersection(footprint).area / reticle.area
+    return overlap, footprint
+
+
+def get_heading(image_capture, satellite_models):
+    # collect the velocity vector and attitude quaternion in ECI
+    sat_model = satellite_models[str(image_capture.spacecraft_id)]
+    v_eci = [image_capture[f'spacecraft_velocity_{c}'] for c in 'xyz']
+    q_bdy = [image_capture[f'spacecraft_attitude_{c}'] for c in 'abcd']
+    q_bus = [sat_model[f'camera_bus_to_nominal_quaternion_{c}'] for c in 'xyzw']
+    # project the velocity vector onto the x-y plane in the spacecraft body system, then calculate angle
+    # between the projected velocity and the y-direction on the image plane
+    R_eci = quaternion_math.convert_to_rotation_matrix(quaternion_math.quaternion_multiply(q_bus, q_bdy))
+    z_vector = matrix_math.multiply_by_vector(np.transpose(R_eci), [0, 0, 1])
+    y_vector = matrix_math.multiply_by_vector(np.transpose(R_eci), [0, 1, 0])
+    projected_velocity = vector_math.project_to_plane(v_eci, z_vector)
+    angle_to_y = vector_math.degrees_between(projected_velocity, y_vector)
+    if angle_to_y > 90:
+        angle_to_y -= 180
+    return angle_to_y
+
+
+def get_reticle_and_bounds(total_error_xy_km, sat_model):
+    reticle = Point(*total_error_xy_km).buffer(1.5)
+    full_image_bounds = [(-3300, -2200), (3300, -2200), (3300, 2200), (-3300, 2200)]
+    aoi = sat_model.get('area_of_interest')
+    if aoi:
+        cropped_image_bounds = [(aoi['columns']['min'] - 3300, aoi['rows']['min'] - 2200),
+                                (aoi['columns']['max'] - 3300, aoi['rows']['min'] - 2200),
+                                (aoi['columns']['max'] - 3300, aoi['rows']['max'] - 2200),
+                                (aoi['columns']['min'] - 3300, aoi['rows']['max'] - 2200)]
+    else:
+        cropped_image_bounds = full_image_bounds
+    return reticle, full_image_bounds, cropped_image_bounds
+
+
+def add_data(catalog, satellite_models):
+    for idx, image_capture in catalog.iterrows():
+        data = get_errors(image_capture, satellite_models)
+        for k, v in data.items():
+            catalog.loc[idx, k] = v
+    catalog['reticle_90'] = catalog.cropped_overlap.fillna(0) > 0.9
+    catalog['in_spec'] = catalog.clouddetection_land_score > 70
+    return catalog
+
+
+def drop_sp_area(catalog):
+    to_drop = []
+    i = 1
+    while i < len(catalog):
+        this = catalog.iloc[i]
+        prev = catalog.iloc[i-1]
+        this_plus = (this.control_error_y_km > 1) and (this.control_error_y_km < 3.5)
+        this_minus = (this.control_error_y_km < -1) and (this.control_error_y_km > -3.5)
+        prev_plus = (prev.control_error_y_km > 1) and (prev.control_error_y_km < 3.5)
+        prev_minus = (prev.control_error_y_km < -1) and (prev.control_error_y_km > -3.5)
+        if ((this.mission_planner_target_lat == prev.mission_planner_target_lat) and
+            (this.mission_planner_target_long == prev.mission_planner_target_long) and
+            ((this_plus and prev_minus) or (this_minus and prev_plus))):
+             to_drop.extend([i-1, i])
+        i += 1
+
+    to_drop = np.unique(to_drop)
+    print(f'dropping {len(to_drop)} likely SP area targets')
+
+    catalog.drop(catalog.index[to_drop], inplace=True)
+    return catalog
+
+
+def load_image_catalog(report_file):
+    #report = report.rename(lambda item:item.replace('workflow_report.', ''), axis='columns')
+    #report.drop_duplicates('image_id', keep='last', inplace=True)
+    catalog = pd.read_csv(report_file, parse_dates=['image_capture_time'], index_col='image_capture_time')
+    catalog.sort_index(inplace=True)
+    catalog.spacecraft_id = catalog.spacecraft_id.fillna(0).astype(int)
+    catalog['image_type'] = 'ground'
+    catalog.loc[catalog.last_task_name == 'CelestialThumbnail', 'image_type'] = 'stellar'
+    catalog.loc[(catalog.image_type == 'stellar') &
+                (catalog.collection_conditions_phase_angle_deg > 0), 'image_type'] = 'lunar'
+    # NEI
+#    catalog = catalog[pd.isna(catalog.collection_conditions_in_eclipse)]
+#    catalog.query('last_task_name != "CelestialThumbnail"', inplace=True)
+    # NTI
+#    catalog.query('image_details_image_pan_95th_percentile > 100', inplace=True)
+    # SP area target deck ticket
+    sp_area_target = catalog.mission_planner_target_name.fillna('').str.contains("G0-2542")
+    catalog.loc[sp_area_target, 'image_type'] = 'sparea'
+    #
+    # NTI
+    nti = catalog.collection_conditions_sun_elevation_degrees < -10
+    print(f'{nti.sum()} NTI targets')
+    catalog.loc[nti, 'image_type'] = 'nti'
+#    catalog = catalog[~sp_area_target].copy()
+    # missing elevation in m-p
+#    wrong_el = ((catalog.mission_planner_elevation_meters < 1) &
+#                (catalog.georeference_elevation_meters > 100))
+#    catalog = catalog[~wrong_el].copy()
+    # 70% unobstructed land
+#    catalog.query('clouddetection_land_score >= 70 & image_details_image_pan_fraction_saturated < 0.15', inplace=True)
+    catalog['georef_success'] = ((catalog.georeference_error_std_dev_meters < 50) &
+                                 (catalog.georeference_num_tiepoints_found >= 3))
+    return catalog

@@ -1,0 +1,143 @@
+{
+    "metadata": {
+      "name": "Example Spacecraft Attitude Data",
+      "description": "Sample attitude data for testing",
+      "created": "2023-05-15T10:00:00Z"
+    },
+    "attitude": {
+      "w": 0.9659258,
+      "x": 0.0,
+      "y": 0.2588190,
+      "z": 0.0
+    },
+    "bodyRates": {
+      "x": 0.01,
+      "y": 0.05,
+      "z": -0.02
+    },
+    "time": {
+      "year": 2023,
+      "month": 5,
+      "day": 15,
+      "hour": 10,
+      "minute": 0,
+      "second": 0
+    },
+    "referenceVectors": {
+      "sun": {
+        "x": 0.8660254,
+        "y": 0.5,
+        "z": 0.0
+      },
+      "nadir": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -1.0
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.0
+      }
+    },
+    "simulationSequence": [
+      {
+        "time": 0,
+        "quaternion": {
+          "w": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      {
+        "time": 60,
+        "quaternion": {
+          "w": 0.9659258,
+          "x": 0.0,
+          "y": 0.2588190,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.01,
+          "y": 0.05,
+          "z": -0.02
+        }
+      },
+      {
+        "time": 120,
+        "quaternion": {
+          "w": 0.8660254,
+          "x": 0.0,
+          "y": 0.5,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.02,
+          "y": 0.03,
+          "z": -0.01
+        }
+      },
+      {
+        "time": 180,
+        "quaternion": {
+          "w": 0.7071068,
+          "x": 0.0,
+          "y": 0.7071068,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.015,
+          "y": 0.025,
+          "z": -0.005
+        }
+      },
+      {
+        "time": 240,
+        "quaternion": {
+          "w": 0.5,
+          "x": 0.0,
+          "y": 0.8660254,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.01,
+          "y": 0.02,
+          "z": 0.0
+        }
+      },
+      {
+        "time": 300,
+        "quaternion": {
+          "w": 0.2588190,
+          "x": 0.0,
+          "y": 0.9659258,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.005,
+          "y": 0.01,
+          "z": 0.005
+        }
+      },
+      {
+        "time": 360,
+        "quaternion": {
+          "w": 0.0,
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "bodyRates": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.01
+        }
+      }
+    ]
+  }
