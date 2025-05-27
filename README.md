@@ -1,6 +1,9 @@
 # Welcome to Yannick's Project Showcase 🚀
 
-Hello, and thanks for stopping by! I'm Yannick—a driven aerospace engineer with a passion for applying engineering principles to real-world challenges. While this repository contains a subset of my work, it offers a window into my journey through modeling, control systems, data-driven algorithms, and problem-solving. Below, you'll find projects that demonstrate engineering fundamentals in action, from predictive models to algorithmic solutions.
+Hi — I’m Yannick.  
+I build systems that bridge physics, machine learning, and software engineering to solve complex, real-world problems.
+
+This repository highlights a collection of projects built in high-stakes environments like aerospace — tools designed to detect anomalies, forecast power behavior from telemetry, and visualize control systems in real time. While many of these originated in the space domain, the engineering patterns and problem-solving approaches behind them are broadly applicable: clean architecture, robust pipelines, and a strong emphasis on observability and correctness.
 
 ---
 
@@ -47,14 +50,19 @@ A fun yet educational project where I built a Sudoku solver using a backtracking
 
 ---
 
-## A Bit About Me 🧑‍🚀
+## A Bit About Me 🧑‍💻
 
-I'm a practical engineer who enjoys blending core engineering principles with innovative solutions. Whether it's predicting battery health for satellites or visualizing fluid flow patterns, I strive to tackle complex problems with creativity and rigor. While this repository represents some of my shared work, it reflects a mindset focused on continuous learning and impactful contributions.
+I'm a systems-minded engineer with a background in control systems, modeling, and applied machine learning. I focus on building tools that are both principled and practical — from real-time diagnostics to predictive models grounded in real data.
 
-**Connect**:
-- [LinkedIn](https://www.linkedin.com/in/yannab) 🌐
+My interests lie in:
+- Building intelligent infrastructure and tooling  
+- Bridging physical systems and ML  
+- Solving hard problems with minimal fuss and maximal clarity  
+
+**Connect:**  
+- [LinkedIn](https://www.linkedin.com/in/yannab) 🌐  
 - Email: bondoyannick9@gmail.com 📧
 
 ---
 
-Explore, reach out, or share your thoughts—I always enjoy connecting over engineering, data, or anything in between.
+Feel free to explore the projects below. Each one reflects a different facet of how I think, build, and debug real-world systems.
